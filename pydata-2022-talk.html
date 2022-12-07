@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Bringing Awkward Array into the Broader PyData Ecosystem</title>
+<meta name="author" content="Doug Davis"/>
+<meta name="description" content=""/>
+<meta name="keywords" content=""/>
+<style type="text/css">
+.underline { text-decoration: underline; }
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js/dist/reveal.css"/>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js/dist/theme/blood.css" id="theme"/>
+
+<link rel="stylesheet" href="./pydata-2022-talk.css"/>
+
+<!-- If the query includes 'print-pdf', include the PDF print sheet -->
+<script>
+    if( window.location.search.match( /print-pdf/gi ) ) {
+        var link = document.createElement( 'link' );
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = 'https://cdn.jsdelivr.net/npm/reveal.js/css/print/pdf.css';
+        document.getElementsByTagName( 'head' )[0].appendChild( link );
+    }
+</script>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+<section id="sec-title-slide"><h1 class="title">Bringing Awkward Array into the Broader PyData Ecosystem</h1><em></em><br><br>Doug Davis<br>December 2, 2022
+</section>
+
+<section>
+<section id="slide-orgad228d9">
+<h2 id="orgad228d9">Outline</h2>
+<ol>
+<li class="fragment appear">The Components
+<ul>
+<li>Awkward Array</li>
+<li>Dask</li>
+<li>Pandas</li>
+
+</ul></li>
+<li class="fragment appear">The (new) Connections
+<ul>
+<li>Awkward + Dask</li>
+<li>Awkward + Pandas</li>
+
+</ul></li>
+<li class="fragment appear">Demos</li>
+
+</ol>
+
+</section>
+</section>
+<section>
+<section id="slide-org5f2a94d">
+<h2 id="org5f2a94d">Awkward-Array</h2>
+<p class="fragment (appear)">
+Operate on <b><b>nested, variable-sized data</b></b>, including arbitrary-length
+lists, records, mixed types, and missing data, using <b><b>NumPy-like
+idioms</b></b>.
+</p>
+
+</section>
+<section id="slide-org6102d68" data-auto-animate>
+<h3 id="org6102d68">Small Example</h3>
+<div class="org-src-container">
+
+<pre  class="src src-python"   data-id="foo" ><code trim>&gt;&gt;&gt; import awkward as ak
+&gt;&gt;&gt; array = ak.Array(
+...   [
+...     [{"x": 1.1, "y": [1]}, {"x": 2.2, "y": [1, 2]}, {"x": 3.3, "y": [1, 2, 3]}],
+...     [],
+...     [{"x": 4.4, "y": [1, 2, 3, 4]}, {"x": 5.5, "y": [1, 2, 3, 4, 5]}]
+...   ]
+... )
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orge6f691c" data-auto-animate>
+<h3 id="orge6f691c">Small Example</h3>
+<div class="org-src-container">
+
+<pre  class="src src-python"   data-id="foo" ><code trim>&gt;&gt;&gt; import awkward as ak
+&gt;&gt;&gt; array = ak.Array(
+...   [
+...     [{"x": 1.1, "y": [1]}, {"x": 2.2, "y": [1, 2]}, {"x": 3.3, "y": [1, 2, 3]}],
+...     [],
+...     [{"x": 4.4, "y": [1, 2, 3, 4]}, {"x": 5.5, "y": [1, 2, 3, 4, 5]}]
+...   ]
+... )
+&gt;&gt;&gt; np.square(array["y", ..., 1:])
+</code></pre>
+</div>
+
+</section>
+<section id="slide-org3883601" data-auto-animate>
+<h3 id="org3883601">Small Example</h3>
+<div class="org-src-container">
+
+<pre  class="src src-python"   data-id="foo" ><code trim>&gt;&gt;&gt; import awkward as ak
+&gt;&gt;&gt; array = ak.Array(
+...   [
+...     [{"x": 1.1, "y": [1]}, {"x": 2.2, "y": [1, 2]}, {"x": 3.3, "y": [1, 2, 3]}],
+...     [],
+...     [{"x": 4.4, "y": [1, 2, 3, 4]}, {"x": 5.5, "y": [1, 2, 3, 4, 5]}]
+...   ]
+... )
+&gt;&gt;&gt; np.square(array["y", ..., 1:])
+[
+  [[], [4], [4, 9]],
+  [],
+  [[4, 9, 16], [4, 9, 16, 25]]
+]
+</code></pre>
+</div>
+
+</section>
+<section id="slide-org08ddf31">
+<h3 id="org08ddf31">Awkward-Array</h3>
+<p>
+Arrays are <b><b>dynamically typed</b></b>, but operations on them are
+<b><b>compiled and fast</b></b>.
+</p>
+
+</section>
+</section>
+<section>
+<section id="slide-org3d05c0c">
+<h2 id="org3d05c0c">Dask</h2>
+<ul>
+<li class="fragment appear"><b>Task graph</b> library</li>
+<li class="fragment appear"><b>Schedulers</b> to <i>execute</i> the task graphs</li>
+<li class="fragment appear">Long time member of the PyData ecosystem (est. 2015)</li>
+
+</ul>
+
+</section>
+<section id="slide-org8e2ced3">
+<h3 id="org8e2ced3">Task Graph Library</h3>
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides" class="fragment (appear)">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Eager Programs</th>
+<th scope="col" class="org-left">Task Graph Creation API</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">NumPy</td>
+<td class="org-left">dask.array</td>
+</tr>
+
+<tr>
+<td class="org-left">Pandas</td>
+<td class="org-left">dask.dataframe</td>
+</tr>
+
+<tr>
+<td class="org-left">Python Iterables</td>
+<td class="org-left">dask.bag</td>
+</tr>
+
+<tr>
+<td class="org-left">Custom</td>
+<td class="org-left">dask.delayed</td>
+</tr>
+</tbody>
+</table>
+
+<p class="fragment (appear)">
+Dask collections represent chunked/partitioned versions of concrete
+types.
+</p>
+
+</section>
+<section id="slide-orgc7b0e9c">
+<h3 id="orgc7b0e9c">NumPy to Dask</h3>
+<div class="org-src-container">
+
+<pre  class="fragment (appear)"   ><code trim>import numpy as np
+x = np.ones((1000, 1000))
+s = np.sum(x, axis=1)
+</code></pre>
+</div>
+
+<div class="org-src-container">
+
+<pre  class="fragment (appear)"   ><code trim>import dask.array as da
+x = da.ones((1000, 1000), chunks=(250, 250))
+s = da.sum(x, axis=1)
+s = s.compute()
+</code></pre>
+</div>
+
+</section>
+<section id="slide-org33f7499">
+<h3 id="org33f7499">Execution Engines</h3>
+<ul>
+<li class="fragment appear">Threaded scheduler on your laptop: use all available resources.
+<ul>
+<li>Parallelize operations.</li>
+<li>Partition dataset that does not fit in memory.</li>
+
+</ul></li>
+<li class="fragment appear">Distributed scheduler:
+<ul>
+<li>Scale up to 100's of machines on the cloud!</li>
+
+</ul></li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orga435f27">
+<h2 id="orga435f27">Pandas</h2>
+<ul>
+<li class="fragment appear">Foundational package in the PyData ecosystem.</li>
+<li class="fragment appear">Many users' first exposure to data analysis with Python.</li>
+<li class="fragment appear">Columnar analysis on DataFrames
+<ul>
+<li>Each column a Series (1D) of scalar types</li>
+<li>Multidimensional possible, but relies on <code>object</code> dtype!</li>
+
+</ul></li>
+
+</ul>
+
+</section>
+<section id="slide-orgc916d0f" data-auto-animate>
+<h3 id="orgc916d0f">Small Motivating Example</h3>
+<div class="org-src-container">
+
+<pre  class="src src-python"   data-id="bar" ><code trim>&gt;&gt;&gt; df = pd.DataFrame(
+...     {"a": [42, 43, 44], "b": [[1, 2, 3], [4], [5, 6]]}
+... )
+&gt;&gt;&gt; df
+    a          b
+0  42  [1, 2, 3]
+1  43        [4]
+2  44     [5, 6]
+&gt;&gt;&gt; df.b
+0    [1, 2, 3]
+1          [4]
+2       [5, 6]
+Name: b, dtype: object
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgfd24190" data-auto-animate>
+<h3 id="orgfd24190">Small Motivating Example</h3>
+<div class="org-src-container">
+
+<pre  class="src src-python"   data-id="bar" ><code trim>&gt;&gt;&gt; df = pd.DataFrame(
+...     {"a": [42, 43, 44], "b": [[1, 2, 3], [4], [5, 6]]}
+... )
+&gt;&gt;&gt; df
+    a          b
+0  42  [1, 2, 3]
+1  43        [4]
+2  44     [5, 6]
+&gt;&gt;&gt; df.b
+0    [1, 2, 3]
+1          [4]
+2       [5, 6]
+Name: b, dtype: object
+&gt;&gt;&gt; df.b.mean()
+TypeError: complex() first argument must be a string or a number, not 'list'
+</code></pre>
+</div>
+
+</section>
+<section id="slide-org2344df8">
+<h3 id="org2344df8">Extension Arrays and Types</h3>
+<ul>
+<li class="fragment appear">Pandas has builtin support for common columns</li>
+<li class="fragment appear">Arrays of:
+<ul>
+<li>floats</li>
+<li>ints</li>
+<li>strings</li>
+<li>categoricals</li>
+
+</ul></li>
+<li class="fragment appear">Pandas supports adding new types of columns with <code>ExtensionArray</code>'s
+and <code>ExtensionDtype</code>'s.</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-org0af3137">
+<h2 id="org0af3137">NEW!</h2>
+
+</section>
+</section>
+<section>
+<section id="slide-org955f2e9">
+<h2 id="org955f2e9">Awkward + Dask</h2>
+<div class="outline-text-2" id="text-org955f2e9">
+</div>
+</section>
+<section id="slide-orga2b3e25" data-auto-animate>
+<h3 id="orga2b3e25">Task Graph Libraries</h3>
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Eager Programs</th>
+<th scope="col" class="org-left">Task Graph Creation API</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">NumPy</td>
+<td class="org-left">dask.array</td>
+</tr>
+
+<tr>
+<td class="org-left">Pandas</td>
+<td class="org-left">dask.dataframe</td>
+</tr>
+
+<tr>
+<td class="org-left">Python Iterables</td>
+<td class="org-left">dask.bag</td>
+</tr>
+
+<tr>
+<td class="org-left">Custom</td>
+<td class="org-left">dask.delayed</td>
+</tr>
+
+<tr>
+<td class="org-left">Awkward</td>
+<td class="org-left">dask-awkward</td>
+</tr>
+</tbody>
+</table>
+
+<p class="fragment (appear)">
+dask-awkward adds a new task graph creation API.
+</p>
+
+<p class="fragment (appear)">
+dask-awkward provides a new Dask Collection.
+</p>
+
+<p class="fragment (appear)">
+Get the execution engine for free!
+</p>
+
+</section>
+</section>
+<section>
+<section id="slide-orga3f0e47">
+<h2 id="orga3f0e47">Awkward + Pandas</h2>
+<div class="outline-text-2" id="text-orga3f0e47">
+</div>
+</section>
+<section id="slide-org22d1b80">
+<h3 id="org22d1b80">New Extension Array and Dtype</h3>
+<p class="fragment (appear)">
+awkward-pandas provides the <code>AwkwardExtensionArray</code> and <code>AwkwardDtype</code>
+implementations to natively use awkward arrays inside of Pandas
+objects.
+</p>
+
+<p class="fragment (appear)">
+awkward-pandas also provides the <code>ak</code> Series accessor to use the
+awkward library itself with Pandas workflows.
+</p>
+
+</section>
+<section id="slide-orge0e9f38" data-auto-animate>
+<h3 id="orge0e9f38">Small Example</h3>
+<div class="org-src-container">
+
+<pre  class="src src-python"   data-id="baz" ><code trim>&gt;&gt;&gt; s = pd.Series([[1, 2, 3], [4], [5, 6]])
+&gt;&gt;&gt; s
+0    [1, 2, 3]
+1          [4]
+2       [5, 6]
+dtype: object
+</code></pre>
+</div>
+
+</section>
+<section id="slide-org02b024a" data-auto-animate>
+<h3 id="org02b024a">Small Example</h3>
+<div class="org-src-container">
+
+<pre  class="src src-python"   data-id="baz" ><code trim>&gt;&gt;&gt; s = pd.Series([[1, 2, 3], [4], [5, 6]])
+&gt;&gt;&gt; s
+0    [1, 2, 3]
+1          [4]
+2       [5, 6]
+dtype: object
+&gt;&gt;&gt; import awkward_pandas
+&gt;&gt;&gt; s.astype("awkward")
+0    [1, 2, 3]
+1          [4]
+2       [5, 6]
+dtype: awkward
+&gt;&gt;&gt; s.astype("awkward").mean()
+3.5
+&gt;&gt;&gt; s.astype("awkward").ak.mean(axis=1)
+0    2.0
+1    4.0
+2    5.5
+dtype: awkward
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgb4538fd">
+<h2 id="orgb4538fd">Start using today!</h2>
+<p>
+First official releases coming this month.
+</p>
+
+<p>
+Pre-releases are available on PyPI now.
+</p>
+
+<p>
+<a href="https://github.com/dask-contrib/dask-awkward">https://github.com/dask-contrib/dask-awkward</a>
+</p>
+
+<p>
+<code>pip install dask-awkward</code>
+</p>
+
+<p>
+<a href="https://github.com/intake/awkward-pandas">https://github.com/intake/awkward-pandas</a>
+</p>
+
+<p>
+<code>pip install awkward-pandas</code>
+</p>
+
+</section>
+</section>
+<section>
+<section id="slide-orgb53630a">
+<h2 id="orgb53630a">Demos</h2>
+
+</section>
+</section>
+<section>
+<section id="slide-orgd08521e">
+<h2 id="orgd08521e">Thank you!</h2>
+</section>
+</section>
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js/dist/reveal.js"></script>
+
+<script>
+// Full list of configuration options available here:
+// https://github.com/hakimel/reveal.js#configuration
+Reveal.initialize({
+slideNumber:"c/t", transition:"slide", transitionSpeed:"fast", controlsTutorial:false, minScale:0.75, maxScale:1.35, width:1280,
+
+// Optional libraries used to extend on reveal.js
+dependencies: [
+ { src: 'https://cdn.jsdelivr.net/npm/reveal.js/plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+ { src: 'https://cdn.jsdelivr.net/npm/reveal.js/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+ { src: 'https://cdn.jsdelivr.net/npm/reveal.js/plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+ { src: 'https://cdn.jsdelivr.net/npm/reveal.js/plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }]
+
+});
+
+</script>
+</body>
+</html>

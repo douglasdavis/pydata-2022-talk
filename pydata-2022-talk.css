@@ -1,0 +1,17 @@
+.reveal h1 {
+    font-size: 200%;
+}
+
+/* .reveal scrollable { */
+/*     bottom: 0px; */
+/*     overflow-y: auto !important; */
+/*     overflow-x: hidden !important; */
+/* } */
+
+/* .reveal ul { */
+/*     list-style-type: lower-greek; */
+/* } */
+
+.reveal pre code {
+    max-width: 800;
+}

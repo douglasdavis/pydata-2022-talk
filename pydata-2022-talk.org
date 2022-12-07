@@ -1,0 +1,306 @@
+#+TITLE: Bringing Awkward Array into the Broader PyData Ecosystem
+#+AUTHOR: Doug Davis
+#+DATE: December 2, 2022
+#+OPTIONS: toc:nil num:nil html-postamble:nil ^:{} reveal_title_slide:nil
+#+REVEAL_ROOT: https://cdn.jsdelivr.net/npm/reveal.js
+#+REVEAL_THEME: blood
+#+REVEAL_EXTRA_CSS: ./pydata-2022-talk.css
+#+REVEAL_INIT_OPTIONS: slideNumber:"c/t", transition:"slide", transitionSpeed:"fast", controlsTutorial:false, minScale:0.75, maxScale:1.35, width:1280
+#+REVEAL_TITLE_SLIDE: <h1 class="title">%t</h1><em>%s</em><br><br>%a<br>%d
+
+* Outline
+
+#+ATTR_REVEAL: :frag (appear)
+1. The Components
+  - Awkward Array
+  - Dask
+  - Pandas
+2. The (new) Connections
+  - Awkward + Dask
+  - Awkward + Pandas
+3. Demos
+
+* Awkward-Array
+
+#+ATTR_REVEAL: :frag (appear)
+Operate on **nested, variable-sized data**, including arbitrary-length
+lists, records, mixed types, and missing data, using **NumPy-like
+idioms**.
+
+** Small Example
+  :PROPERTIES:
+  :REVEAL_EXTRA_ATTR: data-auto-animate
+  :END:
+
+#+ATTR_REVEAL: :data_id foo
+#+begin_src python
+  >>> import awkward as ak
+  >>> array = ak.Array(
+  ...   [
+  ...     [{"x": 1.1, "y": [1]}, {"x": 2.2, "y": [1, 2]}, {"x": 3.3, "y": [1, 2, 3]}],
+  ...     [],
+  ...     [{"x": 4.4, "y": [1, 2, 3, 4]}, {"x": 5.5, "y": [1, 2, 3, 4, 5]}]
+  ...   ]
+  ... )
+#+end_src
+
+** Small Example
+  :PROPERTIES:
+  :REVEAL_EXTRA_ATTR: data-auto-animate
+  :END:
+
+#+ATTR_REVEAL: :data_id foo
+#+begin_src python
+  >>> import awkward as ak
+  >>> array = ak.Array(
+  ...   [
+  ...     [{"x": 1.1, "y": [1]}, {"x": 2.2, "y": [1, 2]}, {"x": 3.3, "y": [1, 2, 3]}],
+  ...     [],
+  ...     [{"x": 4.4, "y": [1, 2, 3, 4]}, {"x": 5.5, "y": [1, 2, 3, 4, 5]}]
+  ...   ]
+  ... )
+  >>> np.square(array["y", ..., 1:])
+#+end_src
+
+** Small Example
+  :PROPERTIES:
+  :REVEAL_EXTRA_ATTR: data-auto-animate
+  :END:
+
+#+ATTR_REVEAL: :data_id foo
+#+begin_src python
+  >>> import awkward as ak
+  >>> array = ak.Array(
+  ...   [
+  ...     [{"x": 1.1, "y": [1]}, {"x": 2.2, "y": [1, 2]}, {"x": 3.3, "y": [1, 2, 3]}],
+  ...     [],
+  ...     [{"x": 4.4, "y": [1, 2, 3, 4]}, {"x": 5.5, "y": [1, 2, 3, 4, 5]}]
+  ...   ]
+  ... )
+  >>> np.square(array["y", ..., 1:])
+  [
+    [[], [4], [4, 9]],
+    [],
+    [[4, 9, 16], [4, 9, 16, 25]]
+  ]
+#+end_src
+
+** Awkward-Array
+
+Arrays are **dynamically typed**, but operations on them are
+**compiled and fast**.
+
+* Dask
+
+#+ATTR_REVEAL: :frag (appear)
+- *Task graph* library
+- *Schedulers* to /execute/ the task graphs
+- Long time member of the PyData ecosystem (est. 2015)
+
+** Task Graph Library
+
+#+ATTR_REVEAL: :frag (appear)
+| Eager Programs   | Task Graph Creation API |
+|------------------+-------------------------|
+| NumPy            | dask.array              |
+| Pandas           | dask.dataframe          |
+| Python Iterables | dask.bag                |
+| Custom           | dask.delayed            |
+
+#+ATTR_REVEAL: :frag (appear)
+Dask collections represent chunked/partitioned versions of concrete
+types.
+
+** NumPy to Dask
+
+#+ATTR_REVEAL: :frag (appear)
+#+begin_src python
+  import numpy as np
+  x = np.ones((1000, 1000))
+  s = np.sum(x, axis=1)
+#+end_src
+
+#+ATTR_REVEAL: :frag (appear)
+#+begin_src python
+  import dask.array as da
+  x = da.ones((1000, 1000), chunks=(250, 250))
+  s = da.sum(x, axis=1)
+  s = s.compute()
+#+end_src
+
+** Execution Engines
+
+#+ATTR_REVEAL: :frag (appear)
+- Threaded scheduler on your laptop: use all available resources.
+  - Parallelize operations.
+  - Partition dataset that does not fit in memory.
+- Distributed scheduler:
+  - Scale up to 100's of machines on the cloud!
+
+* Pandas
+
+#+ATTR_REVEAL: :frag (appear)
+- Foundational package in the PyData ecosystem.
+- Many users' first exposure to data analysis with Python.
+- Columnar analysis on DataFrames
+  - Each column a Series (1D) of scalar types
+  - Multidimensional possible, but relies on =object= dtype!
+
+** Small Motivating Example
+  :PROPERTIES:
+  :REVEAL_EXTRA_ATTR: data-auto-animate
+  :END:
+
+#+ATTR_REVEAL: :data_id bar
+#+begin_src python
+  >>> df = pd.DataFrame(
+  ...     {"a": [42, 43, 44], "b": [[1, 2, 3], [4], [5, 6]]}
+  ... )
+  >>> df
+      a          b
+  0  42  [1, 2, 3]
+  1  43        [4]
+  2  44     [5, 6]
+  >>> df.b
+  0    [1, 2, 3]
+  1          [4]
+  2       [5, 6]
+  Name: b, dtype: object
+#+end_src
+
+** Small Motivating Example
+  :PROPERTIES:
+  :REVEAL_EXTRA_ATTR: data-auto-animate
+  :END:
+
+#+ATTR_REVEAL: :data_id bar
+#+begin_src python
+  >>> df = pd.DataFrame(
+  ...     {"a": [42, 43, 44], "b": [[1, 2, 3], [4], [5, 6]]}
+  ... )
+  >>> df
+      a          b
+  0  42  [1, 2, 3]
+  1  43        [4]
+  2  44     [5, 6]
+  >>> df.b
+  0    [1, 2, 3]
+  1          [4]
+  2       [5, 6]
+  Name: b, dtype: object
+  >>> df.b.mean()
+  TypeError: complex() first argument must be a string or a number, not 'list'
+#+end_src
+
+** Extension Arrays and Types
+
+#+ATTR_REVEAL: :frag (appear)
+- Pandas has builtin support for common columns
+- Arrays of:
+  - floats
+  - ints
+  - strings
+  - categoricals
+- Pandas supports adding new types of columns with =ExtensionArray='s
+  and =ExtensionDtype='s.
+
+* NEW!
+
+* Awkward + Dask
+
+** Task Graph Libraries
+    :PROPERTIES:
+    :REVEAL_EXTRA_ATTR: data-auto-animate
+    :END:
+
+#+ATTR_REVEAL: :data_id table
+| Eager Programs   | Task Graph Creation API |
+|------------------+-------------------------|
+| NumPy            | dask.array              |
+| Pandas           | dask.dataframe          |
+| Python Iterables | dask.bag                |
+| Custom           | dask.delayed            |
+| Awkward          | dask-awkward            |
+
+#+ATTR_REVEAL: :frag (appear)
+dask-awkward adds a new task graph creation API.
+
+#+ATTR_REVEAL: :frag (appear)
+dask-awkward provides a new Dask Collection.
+
+#+ATTR_REVEAL: :frag (appear)
+Get the execution engine for free!
+
+* Awkward + Pandas
+
+** New Extension Array and Dtype
+
+#+ATTR_REVEAL: :frag (appear)
+awkward-pandas provides the =AwkwardExtensionArray= and =AwkwardDtype=
+implementations to natively use awkward arrays inside of Pandas
+objects.
+
+#+ATTR_REVEAL: :frag (appear)
+awkward-pandas also provides the =ak= Series accessor to use the
+awkward library itself with Pandas workflows.
+
+** Small Example
+  :PROPERTIES:
+  :REVEAL_EXTRA_ATTR: data-auto-animate
+  :END:
+
+#+ATTR_REVEAL: :data_id baz
+#+begin_src python
+  >>> s = pd.Series([[1, 2, 3], [4], [5, 6]])
+  >>> s
+  0    [1, 2, 3]
+  1          [4]
+  2       [5, 6]
+  dtype: object
+#+end_src
+
+** Small Example
+  :PROPERTIES:
+  :REVEAL_EXTRA_ATTR: data-auto-animate
+  :END:
+
+#+ATTR_REVEAL: :data_id baz
+#+begin_src python
+  >>> s = pd.Series([[1, 2, 3], [4], [5, 6]])
+  >>> s
+  0    [1, 2, 3]
+  1          [4]
+  2       [5, 6]
+  dtype: object
+  >>> import awkward_pandas
+  >>> s.astype("awkward")
+  0    [1, 2, 3]
+  1          [4]
+  2       [5, 6]
+  dtype: awkward
+  >>> s.astype("awkward").mean()
+  3.5
+  >>> s.astype("awkward").ak.mean(axis=1)
+  0    2.0
+  1    4.0
+  2    5.5
+  dtype: awkward
+#+end_src
+
+* Start using today!
+
+First official releases coming this month.
+
+Pre-releases are available on PyPI now.
+
+https://github.com/dask-contrib/dask-awkward
+
+=pip install dask-awkward=
+
+https://github.com/intake/awkward-pandas
+
+=pip install awkward-pandas=
+
+* Demos
+
+* Thank you!
